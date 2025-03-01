@@ -9,8 +9,10 @@ function shuffle(arr) {
     arr.sort((a, b) => Math.random() * 2 - 1); // Random number instead of comparison
 }
 
-let loadedDecks = [];
+export let loadedDecks = [];
+
 let deck;
+
 function loadDecks(_deck, i) {
     deck = _deck;
     let packs = deck.listPacks();
@@ -22,6 +24,13 @@ function loadDecks(_deck, i) {
         loadedDecks.push(_deck);
     }
 }
+
+export async function shuffleDecks() {
+    loadedDecks.forEach(deck => {
+        shuffle(deck.white);
+        shuffle(deck.black);
+    });
+};
 
 deckFiles.forEach(async (file, i) => {
     const filePath = path.join(decksDir, file);
