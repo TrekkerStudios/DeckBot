@@ -2,13 +2,14 @@ import { Client } from "discord.js";
 import { config } from "./config";
 import { commands } from "./commands";
 import { deployCommands } from "./deploy-commands";
+import type { Gamestate } from "./types";
 
 const client = new Client({
   intents: ["Guilds", "GuildMessages", "DirectMessages"],
 });
 
 client.once("ready", () => {
-  console.log("Discord bot is ready! 🤖");
+  console.log("DeckBot is ready!");
 });
 
 client.on("guildCreate", async (guild) => {
