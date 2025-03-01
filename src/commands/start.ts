@@ -2,16 +2,16 @@ import { SlashCommandBuilder, CommandInteraction, ThreadAutoArchiveDuration } fr
 
 export const data = new SlashCommandBuilder()
     .setName("start")
-    .setDescription("Start a game of Cards")
+    .setDescription("Start a game of CAH")
     .addNumberOption(option =>
         option
-            .setName('points')
+            .setName('max-points')
             .setDescription('Amount of points to win')
             .setRequired(true)
     );
 
 export async function execute(interaction: CommandInteraction) {
-    const pointsMax = interaction.options.getNumber('points');
+    const pointsMax = interaction.options.getNumber('max-points');
 
     // Check if channel exists and isn't a thread
     if (!interaction.channel || interaction.channel.isThread()) {
@@ -21,9 +21,9 @@ export async function execute(interaction: CommandInteraction) {
     try {
         // Create thread in the current channel
         const thread = await interaction.channel.threads.create({
-            name: `Cards Game - ${pointsMax} points`,
+            name: `DeckBot - ${pointsMax} points`,
             autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
-            reason: `Cards game started by ${interaction.user.tag}`,
+            reason: `Game started by ${interaction.user.tag}`,
         });
 
         // Reply with thread mention
