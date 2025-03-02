@@ -3,7 +3,7 @@ import { addPlayer, createGame, setThreadName, gameLoop } from "../game";
 import { getCurrentGame, setCurrentGame } from "../index";
 
 export const data = new SlashCommandBuilder()
-    .setName("start")
+    .setName("cah")
     .setDescription("Start a game of CAH")
     .addNumberOption(option =>
         option

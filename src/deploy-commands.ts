@@ -26,3 +26,5 @@ export async function deployCommands({ guildId }: DeployCommandsProps) {
     console.error(error);
   }
 }
+
+deployCommands({ guildId: config.DISCORD_GUILD_ID });

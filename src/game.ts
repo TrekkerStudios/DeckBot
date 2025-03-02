@@ -1,7 +1,11 @@
 import { sleep } from "bun";
 import { loadedDecks, shuffleDecks } from "./lib/decks";
 import { joinRoundRow, buildStartRoundEmbed, pickWinnerRow } from "./lib/templates/public";
-import { blockQuote, userMention } from "discord.js";
+import { blockQuote, inlineCode, userMention } from "discord.js";
+
+function stylizedCurrentCard(card: string) {
+    return `**${card.replace(/_/g, inlineCode('______'))}**`;
+}
 
 export type Gamestate = {
     gameStarted: string;
@@ -130,7 +134,7 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
             console.log('New card:', _newCard.text);
         }
 
-        game.currentCard = _newCard.text;
+        game.currentCard = stylizedCurrentCard(_newCard.text);
         game.currentPick = _newCard.pick;
         let prevCzar = game.currentCzar
         let newCzar = game.players[Math.floor(Math.random() * game.players.length)].player;
@@ -159,8 +163,8 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
         for (let i = 0; i < 90; i++) {
             if (!game.currentlyPicking) break;
             if (i === 30) {
-                gameThread.send(`Round will end <t:${Math.floor((Date.now() + 90000) / 1000)}:R>...`).then(message => {
-                    setTimeout(() => message.delete(), 90_000);
+                gameThread.send(`Round will end <t:${Math.floor((Date.now() + 30000) / 1000)}:R>...`).then(message => {
+                    setTimeout(() => message.delete(), 30_000);
                 });
             }
             await sleep(1000);
