@@ -28,7 +28,7 @@ function loadDecks(_deck, i) {
     }
 }
 
-function loadDecksMD(deck, i) {
+export async function loadDecksMD(deck, i) {
     let _deck = deck.deck;
     shuffle(_deck.white);
     shuffle(_deck.black);

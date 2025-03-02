@@ -29,7 +29,7 @@ export class ManyDeck {
         if (typeof this.jsonSrc !== "undefined") {
             let json;
             if (link) {
-                const raw = (await fetch(`api/decks/${this.jsonSrc}`)).data;
+                const raw = await fetch(`https://decks.rereadgames.com/api/decks/${this.jsonSrc}`).then(res => res.json());
                 const data = typeof raw === "string" ? JSON5.parse(raw) : raw;
                 // Process calls into black cards
                 const black = data.calls.map(call => {

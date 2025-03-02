@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, CommandInteraction, ThreadAutoArchiveDuration, MessageFlags } from "discord.js";
 import { addPlayer, createGame, setThreadName, gameLoop } from "../game";
 import { getCurrentGame, setCurrentGame } from "../index";
+import { loadedDecks } from "../lib/decks";
 
 export const data = new SlashCommandBuilder()
     .setName("cah")
@@ -10,13 +11,13 @@ export const data = new SlashCommandBuilder()
             .setName('max-points')
             .setDescription('Amount of points to win')
             .setRequired(true)
+    )
+    .addStringOption(option =>
+        option
+            .setName('decks')
+            .setDescription('Select decks to play with')
+            .setRequired(false)
     );
-    // .addStringOption(option =>
-    //     option
-    //         .setName('max-points')
-    //         .setDescription('Amount of points to win')
-    //         .setRequired(true)
-    // );
 
 export async function execute(interaction: CommandInteraction) {
     let _game = await getCurrentGame();
@@ -27,6 +28,12 @@ export async function execute(interaction: CommandInteraction) {
     const pointsMax = interaction.options.getNumber('max-points');
     _game = setCurrentGame(createGame(pointsMax));
     addPlayer(_game, interaction.user.id);
+
+    const decks = interaction.options.getString('decks');
+    if (decks) {
+        const selectedDecks = decks.split(',');
+        _game.currentDecks = selectedDecks.map(index => loadedDecks[parseInt(index)]);
+    }
 
     if (!interaction.channel || interaction.channel.isThread()) {
         return interaction.reply({ content: 'Please use this command in a text channel!', flags: MessageFlags.Ephemeral });
