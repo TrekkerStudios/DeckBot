@@ -1,7 +1,7 @@
 import { sleep } from "bun";
 import { loadedDecks, shuffleDecks } from "./lib/decks";
 import { joinRoundRow, buildStartRoundEmbed, pickWinnerRow } from "./lib/templates/public";
-import { blockQuote, userMention, time, TimestampStyles } from "discord.js";
+import { blockQuote, userMention } from "discord.js";
 
 export type Gamestate = {
     gameStarted: string;

@@ -1,9 +1,12 @@
 import { CAHDeck } from "./CAHDeck";
+import { ManyDeck } from "./ManyDecks";
 import fs from 'fs';
 import path from 'path';
 
-const decksDir = path.resolve(__dirname, '../decks');
-const deckFiles = fs.readdirSync(decksDir);
+const jsonDecksDir = path.resolve(__dirname, '../decks/json');
+const jsonDeckFiles = fs.readdirSync(jsonDecksDir);
+const mdDecksDir = path.resolve(__dirname, '../decks/manydecks');
+const mdDeckFiles = fs.readdirSync(mdDecksDir);
 
 function shuffle(arr) {
     arr.sort((a, b) => Math.random() * 2 - 1); // Random number instead of comparison
@@ -25,6 +28,13 @@ function loadDecks(_deck, i) {
     }
 }
 
+function loadDecksMD(deck, i) {
+    let _deck = deck.deck;
+    shuffle(_deck.white);
+    shuffle(_deck.black);
+    loadedDecks.push(_deck);
+}
+
 export async function shuffleDecks() {
     loadedDecks.forEach(deck => {
         shuffle(deck.white);
@@ -32,8 +42,14 @@ export async function shuffleDecks() {
     });
 };
 
-deckFiles.forEach(async (file, i) => {
-    const filePath = path.join(decksDir, file);
+jsonDeckFiles.forEach(async (file, i) => {
+    const filePath = path.join(jsonDecksDir, file);
     const deckData = fs.readFileSync(filePath, 'utf-8');
     loadDecks(await CAHDeck.fromFull(deckData, false), i);
+});
+
+mdDeckFiles.forEach(async (file, i) => {
+    const filePath = path.join(mdDecksDir, file);
+    const deckData = fs.readFileSync(filePath, 'utf-8');
+    loadDecksMD(await ManyDeck.fromJSON(deckData, false), i);
 });
