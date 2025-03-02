@@ -11,6 +11,12 @@ export const data = new SlashCommandBuilder()
             .setDescription('Amount of points to win')
             .setRequired(true)
     );
+    // .addStringOption(option =>
+    //     option
+    //         .setName('max-points')
+    //         .setDescription('Amount of points to win')
+    //         .setRequired(true)
+    // );
 
 export async function execute(interaction: CommandInteraction) {
     let _game = await getCurrentGame();

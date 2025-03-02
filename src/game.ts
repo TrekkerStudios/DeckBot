@@ -65,6 +65,7 @@ export function addPlayer(game: Gamestate, player: string) {
             randomDeck = Math.floor(Math.random() * game.currentDecks.length);
             _card = game.currentDecks[randomDeck].white[game.globalWhiteDeck];
         }
+        game.currentDecks[randomDeck].white.splice(game.globalWhiteDeck, 1);
         hand.push(_card);
         game.globalWhiteDeck++;
     }
@@ -136,6 +137,8 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
 
         game.currentCard = stylizedCurrentCard(_newCard.text);
         game.currentPick = _newCard.pick;
+        game.currentDecks[randomDeck].black.splice(game.blackCounter, 1);
+
         let prevCzar = game.currentCzar
         let newCzar = game.players[Math.floor(Math.random() * game.players.length)].player;
         while (newCzar === prevCzar) {
@@ -232,6 +235,15 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
                     .catch(console.error);
             }
             await sleep(2000);
+        }
+
+        // Check for low card count
+        if (game.currentDecks.every(x => x.black.length <= 10) || game.currentDecks.every(x => x.white.length <= 10)) {
+            console.log('Low cards, reshuffling...');
+            game.currentDecks.forEach(x => x.black.push(...loadedDecks.find(y => y.name === x.name).black));
+            game.currentDecks.forEach(x => x.white.push(...loadedDecks.find(y => y.name === x.name).white));
+            game.globalWhiteDeck = 0;
+            game.blackCounter = 0;
         }
 
         // Stall between rounds
