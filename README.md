@@ -44,5 +44,5 @@ DISCORD_GUILD_ID=<GUILD>
     * ManyDecks:
         - If you made the deck, login to [ManyDecks](https://decks.rereadgames.com/) go into the edit page for the deck and click "Download"
         - If you didn't make the deck, you can go to `https://decks.rereadgames.com/api/decks/CODE` (replace CODE with deck code) and download the .json5 file that appears in the browser
-2. Drop in either `decks/json` or `decks/manydecks` based on source.
+2. Drop in either `src/decks/json` or `src/decks/manydecks` based on source.
 3. Reload bot
