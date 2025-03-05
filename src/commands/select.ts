@@ -33,7 +33,13 @@ export async function execute(interaction: CommandInteraction, game: Gamestate) 
         let _cards: string[];
         if (player) {
             // Find cards
-            _cards = player.hand.filter((card, index) => selectedCards.includes(index)).map(card => card.text);
+            _cards = [];
+            selectedCards.forEach(index => {
+                const card = player.hand[index];
+                if (card) {
+                    _cards.push(card.text);
+                }
+            });
             // Remove cards
             player.hand = player.hand.filter((card, index) => !selectedCards.includes(index));
             // Put cards in play

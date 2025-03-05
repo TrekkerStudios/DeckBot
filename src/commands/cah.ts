@@ -21,7 +21,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
     let _game = await getCurrentGame();
-    if (_game != undefined) {
+    if (_game.active = true) {
         return interaction.reply({ content: 'A game is already in progress!', flags: MessageFlags.Ephemeral });
     }
 
@@ -42,7 +42,7 @@ export async function execute(interaction: CommandInteraction) {
     try {
         const thread = await interaction.channel.threads.create({
             name: `DeckBot - First to ${pointsMax} (#${_game.gameUUID})`,
-            autoArchiveDuration: ThreadAutoArchiveDuration.OneDay,
+            autoArchiveDuration: ThreadAutoArchiveDuration.OneHour,
             reason: `${_game.maxPoints} points - Game started by ${interaction.user.tag}`,
         });
         setThreadName(_game, thread.name);

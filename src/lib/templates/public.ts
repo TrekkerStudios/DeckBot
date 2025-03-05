@@ -1,4 +1,4 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, userMention, inlineCode } from "discord.js";
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder, userMention } from "discord.js";
 import type { Gamestate } from "../../game";
 
 const join = new ButtonBuilder()

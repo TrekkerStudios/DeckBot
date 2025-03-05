@@ -8,10 +8,10 @@ export async function execute(interaction: CommandInteraction, game: Gamestate) 
 
     const player = game.players.find(x => x.player === interaction.user.id);
 
-    if (!game.players.find(x => x.player === interaction.user.id)) {
-        await interaction.editReply('You are not in this game.');
-        return;
-    }
+    // if (!game.players.find(x => x.player === interaction.user.id)) {
+    //     await interaction.editReply('You are not in this game.');
+    //     return;
+    // }
 
     // Check if the user is the Card Czar
     if (player?.isCzar) {

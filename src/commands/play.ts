@@ -9,10 +9,6 @@ export async function execute(interaction: CommandInteraction, game: Gamestate) 
     await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     if (interaction.channel?.isThread()) {
-        if (game.active) {
-            await interaction.editReply('Game has already started!');
-            return;
-        }
 
         if (game.players.find(x => x.player === interaction.user.id)) {
             await interaction.editReply('You have already joined the game!');
