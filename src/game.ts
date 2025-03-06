@@ -1,12 +1,15 @@
 import { sleep } from "bun";
 import { loadedDecks, shuffleDecks } from "./lib/decks";
 import { joinRoundRow, buildStartRoundEmbed, pickWinnerRow } from "./lib/templates/public";
-import { blockQuote, inlineCode, userMention } from "discord.js";
+import { blockQuote, bold, inlineCode, userMention, time, TimestampStyles } from "discord.js";
 import { addToLeaderboard } from "./lib/leaderboard";
-import { setCurrentGame } from ".";
 
 function stylizedCurrentCard(card: string) {
     return `**${card.replace(/_/g, inlineCode('______'))}**`;
+}
+
+function createGameUUID() {
+    return Math.random().toString(36).substring(2, 6);
 }
 
 export type Gamestate = {
@@ -31,7 +34,7 @@ export type Gamestate = {
 export function createGame(points: number) {
     const game: Gamestate = {
         gameStarted: new Date().toISOString(),
-        gameUUID: Math.random().toString(36).substring(2, 6),
+        gameUUID: createGameUUID(),
         active: false,
         players: [],
         currentCzar: '',
@@ -47,10 +50,13 @@ export function createGame(points: number) {
         roundWinningCard: '',
         winnerPicked: false,
     };
+    // Shuffle and deal cards
+    shuffleDecks();
+    game.currentDecks.push(...loadedDecks);
     return game;
 }
 
-function resetRoundProps(game: Gamestate) {
+function resetRoundProps(game: Gamestate, activeMessages: any[]) {
     game.currentCzar = '';
     game.currentCard = '';
     game.currentPick = 0;
@@ -63,6 +69,10 @@ function resetRoundProps(game: Gamestate) {
     game.players.forEach(player => {
         player.isCzar = false;
     });
+    if (activeMessages) {
+        activeMessages.forEach(async x => await x.delete());
+        activeMessages = [];
+    }
 }
 
 export function addPlayer(game: Gamestate, player: string) {
@@ -79,7 +89,7 @@ export function addPlayer(game: Gamestate, player: string) {
         if (cardIndex > -1) {
             game.currentDecks[randomDeck].white.splice(cardIndex, 1);
         }
-        hand.push(_card.text);
+        hand.push(_card);
     }
     console.log(`Adding player ${player} to game ${game.gameUUID}`);
     game.players.push({ player, score: 0, isCzar: false, hand });
@@ -101,7 +111,7 @@ async function drawCards(game: Gamestate, player: string) {
             if (cardIndex > -1) {
                 game.currentDecks[randomDeck].white.splice(cardIndex, 1);
             }
-            _player.hand.push(_card.text);
+            _player.hand.push(_card);
         }
     }
 }
@@ -113,42 +123,31 @@ export function setThreadName(game: Gamestate, threadName: string) {
 export async function gameLoop(game: Gamestate, gameThread: any) {
     // Allow users to join
     console.log('Starting game in 60s...');
-    gameThread.send('Type /play to join the game!');
-    gameThread.send(`Game will start <t:${Math.floor((Date.now() + 60000) / 1000)}:R>...`).then(message => {
+    gameThread.send(bold('Type /play to join the game!'));
+    gameThread.send(`Game will start ${time(Math.floor((Date.now() + 60000) / 1000), TimestampStyles.RelativeTime)}...`).then(message => {
         setTimeout(() => message.delete(), 60_000);
     });
     await sleep(60000);
 
-    // Global message waiting flag
-    let messageActiveFlag = true;
+    // Global message activations
+    let activeMessages: any[] = [];
 
     // Start
     console.log(`Starting game...\n${game.players.length} players:`);
     game.players.forEach(x => console.log(x.player));
-    gameThread.send('Game starting now!').then(async message => {
-        while (messageActiveFlag) {
-            await sleep(1000);
-        }
-        message.delete();
+    gameThread.send('Game starting now!').then(message => {
+        activeMessages.push(message);
     });
     game.active = true;
 
-    // Shuffle and deal cards
-    shuffleDecks();
-    game.currentDecks.push(...loadedDecks);
-
     // Wait minimum 3s
-    await sleep(3000).then(() => messageActiveFlag = false);
+    await sleep(3000).then(async () => { activeMessages.forEach(async x => await x.delete()); activeMessages = []; });
 
     // Game loop
     while (game.active) {
-        messageActiveFlag = true;
         console.log('New round starting...')
-        gameThread.send('Round starting...').then(async message => {
-            while (messageActiveFlag) {
-                await sleep(1000);
-            }
-            message.delete();
+        gameThread.send('Round starting...').then(message => {
+            activeMessages.push(message);
         });
 
         // Pick black card, set czar
@@ -160,8 +159,6 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
             let blackCard = Math.floor(Math.random() * game.currentDecks[_randomDeck].black.length);
             _newCard = game.currentDecks[_randomDeck].black[blackCard];
             console.log('Random deck:', _randomDeck, 'Card:', _newCard.text);
-            _newCard = game.currentDecks[_randomDeck].black[_newCard];
-            console.log('New card:', _newCard.text);
         }
 
         // Stylize black card and pop it from array
@@ -186,91 +183,76 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
         console.log('New czar:', game.currentCzar);
 
         // Wait for setup
-        await sleep(3000).then(() => messageActiveFlag = false);
+        await sleep(3000).then(async () => { activeMessages.forEach(async x => await x.delete()); activeMessages = []; });
 
         // Begin round
         game.currentlyPicking = true;
         game.currentlyJudging = false;
         await gameThread.send({
             embeds: [buildStartRoundEmbed(game)],
-        }).then(async message => {
-            while (messageActiveFlag && game.currentlyPicking) {
-                await sleep(1000);
-            }
-            message.delete();
+        }).then(message => {
+            activeMessages.push(message);
         });
         await gameThread.send({
             components: [joinRoundRow],
-        }).then(async message => {
-            while (messageActiveFlag && game.currentlyPicking) {
-                await sleep(1000);
-            }
-            message.delete();
+        }).then(message => {
+            activeMessages.push(message);
         });
         console.log('Picking phase...');
-        gameThread.send(`Round will end <t:${Math.floor((Date.now() + 300000) / 1000)}:R>...`).then(async message => {
-            while (messageActiveFlag && game.currentlyPicking) {
-                await sleep(1000);
-            }
-            message.delete();
+        gameThread.send(`Round will end ${time(Math.floor((Date.now() + 300000) / 1000), TimestampStyles.RelativeTime)}...`).then(message => {
+            activeMessages.push(message);
         });
         for (let i = 0; i < 300; i++) {
             // Check if all players have played their cards
-            let allPlayersPlayed = true;
-            for (let player of game.players) {
-                if (!game.cardsInPlay.find(x => x.player === player.player) && !player.isCzar) {
-                    allPlayersPlayed = false;
-                }
-            }
-            if (allPlayersPlayed) {
+            // FIX UNCOMMENT
+            // let allPlayersPlayed = true;
+            // for (let player of game.players) {
+            //     if (!game.cardsInPlay.find(x => x.player === player.player) && !player.isCzar) {
+            //         allPlayersPlayed = false;
+            //     }
+            // }
+            // if (allPlayersPlayed) {
+            //     game.currentlyPicking = false;
+            // }
+            // if (!game.currentlyPicking) {
+            //     game.currentlyPicking = false;
+            //     break
+            // }
+            await sleep(1000);
+            if (i === 299) {
                 game.currentlyPicking = false;
             }
-            if (!game.currentlyPicking) break;
-            await sleep(1000);
         }
-        messageActiveFlag = false;
+        if (!game.currentlyPicking) {
+            activeMessages.forEach(async x => await x.delete()); activeMessages = [];
+            game.currentlyJudging = true;
+        };
         console.log('Round ended');
 
         // Switch to judging phase
-        game.currentlyPicking = false;
-        game.currentlyJudging = true;
-
         console.log('Judging phase...');
         gameThread.send(`Time's up!`);
-        await gameThread.send({ content: `Please wait while ${userMention(game.currentCzar)} picks a winner...` }).then(async message => {
-            while (messageActiveFlag && game.currentlyJudging) {
-                await sleep(1000);
-            }
-            message.delete();
+        await gameThread.send({ content: `Please wait while ${userMention(game.currentCzar)} picks a winner...` }).then(message => {
+            activeMessages.push(message);
         });
         await gameThread.send({
             components: [pickWinnerRow],
-        }).then(async message => {
-            while (messageActiveFlag && game.currentlyJudging) {
-                await sleep(1000);
-            }
-            message.delete();
+        }).then(message => {
+            activeMessages.push(message);
         });
-        gameThread.send(`Judging will end <t:${Math.floor((Date.now() + 300000) / 1000)}:R>...`).then(async message => {
-            while (messageActiveFlag && game.currentlyJudging) {
-                await sleep(1000);
-            }
-            message.delete();
+        gameThread.send(`Judging will end ${time(Math.floor((Date.now() + 300000) / 1000), TimestampStyles.RelativeTime)}...`).then(message => {
+            activeMessages.push(message);
         });
         for (let i = 0; i < 300; i++) {
             if (game.winnerPicked) break;
             await sleep(1000);
         }
-        messageActiveFlag = false;
-        game.currentlyPicking = false;
-        game.currentlyJudging = false;
+        if (game.winnerPicked) {
+            activeMessages.forEach(async x => await x.delete()); activeMessages = [];
+        };
 
-        messageActiveFlag = true;
-        gameThread.send(`Time's up!`).then(async message => {
-            while (messageActiveFlag) {
-                await sleep(1000);
-            }
-            message.delete();
+        gameThread.send(`Time's up!`).then(message => {
+            activeMessages.push(message);
         });
 
         // Draw cards to players
@@ -279,18 +261,14 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
         }
 
         // Wait minimum 3s
-        await sleep(3000).then(() => messageActiveFlag = false);
+        await sleep(3000).then(() => { activeMessages.forEach(async x => await x.delete()); activeMessages = []; });
 
-        messageActiveFlag = true;
         // Check if winner was picked
         if (!game.winnerPicked) {
             gameThread.send(`No winner was picked this round, everyone throw tomatoes at ${userMention(game.currentCzar)}!`)
                 .then(async message => {
-                    message.react('🍅');
-                    while (messageActiveFlag) {
-                        await sleep(1000);
-                    }
-                    message.delete();
+                    await message.react('🍅');
+                    activeMessages.push(message);
                 })
                 .catch(console.error);
         } else {
@@ -306,11 +284,8 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
                 if (_winner) {
                     gameThread.send({ content: `Game over! The winner is ${userMention(_winner.player)}` })
                         .then(async message => {
-                            message.react('🎉');
-                            while (messageActiveFlag) {
-                                await sleep(1000);
-                            }
-                            message.delete();
+                            await message.react('🎉');
+                            activeMessages.push(message);
                             game.active = false;
                         })
                         .catch(console.error);
@@ -319,17 +294,14 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
             } else {
                 // Or announce winner of round
                 gameThread.send(`The winner is ${userMention(game.roundWinner)} with card(s):\n${blockQuote(game.roundWinningCard)}`).then(async message => {
-                    message.react('🏆');
-                    while (messageActiveFlag) {
-                        await sleep(1000);
-                    }
-                    message.delete();
+                    await message.react('🏆');
+                    activeMessages.push(message);
                 });
             }
         }
 
         // Reset round props
-        resetRoundProps(game);
+        resetRoundProps(game, activeMessages);
 
         // If game is still active, prep for next round
         if (game.active) {
@@ -342,17 +314,18 @@ export async function gameLoop(game: Gamestate, gameThread: any) {
             }
 
             // Wait minimum 5s
-            await sleep(5000).then(() => messageActiveFlag = false);
+            await sleep(5000).then(() => {
+                if (activeMessages) {
+                    activeMessages.forEach(async x => await x.delete());
+                    activeMessages = [];
+                }
+            });
 
             // Stall between rounds
-            messageActiveFlag = true;
-            gameThread.send(`Next round will start <t:${Math.floor((Date.now() + 15000) / 1000)}:R>...`).then(async message => {
-                while (messageActiveFlag) {
-                    await sleep(1000);
-                }
-                message.delete();
+            gameThread.send(`Next round will start ${time(Math.floor((Date.now() + 15000) / 1000), TimestampStyles.RelativeTime)}...`).then(message => {
+                activeMessages.push(message);
             });
-            await sleep(15000).then(() => messageActiveFlag = false);
+            await sleep(15000).then(() => { activeMessages.forEach(async x => await x.delete()); activeMessages = []; });
         }
     }
 }

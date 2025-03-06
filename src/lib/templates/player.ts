@@ -12,7 +12,7 @@ export function buildPlayerSelectDialog(interaction: CommandInteraction, game: G
         const player = game.players.find(x => x.player === interaction.user.id);
         if (player) {
             player.hand.forEach((card: { text: string, pack: number }, index: number) => {
-                if (index != 0 && index % 3 === 0) {
+                if (index != 0 && index == 3) {
                     embed.addFields({ name: '\u200B', value: '\u200B' });
                 };
                 embed.addFields({ name: `Card ${index + 1}`, value: inlineCode(card.text), inline: true });

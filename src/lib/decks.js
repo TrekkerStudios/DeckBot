@@ -42,13 +42,13 @@ export async function shuffleDecks() {
     });
 };
 
-jsonDeckFiles.forEach(async (file, i) => {
+jsonDeckFiles.filter(file => path.extname(file) === '.json').forEach(async (file, i) => {
     const filePath = path.join(jsonDecksDir, file);
     const deckData = fs.readFileSync(filePath, 'utf-8');
     loadDecks(await CAHDeck.fromFull(deckData, false), i);
 });
 
-mdDeckFiles.forEach(async (file, i) => {
+mdDeckFiles.filter(file => path.extname(file) === '.json5').forEach(async (file, i) => {
     const filePath = path.join(mdDecksDir, file);
     const deckData = fs.readFileSync(filePath, 'utf-8');
     loadDecksMD(await ManyDeck.fromJSON(deckData, false), i);

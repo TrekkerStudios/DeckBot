@@ -21,7 +21,8 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
     let _game = await getCurrentGame();
-    if (_game.active = true) {
+
+    if (_game != undefined && _game.active == true) {
         return interaction.reply({ content: 'A game is already in progress!', flags: MessageFlags.Ephemeral });
     }
 

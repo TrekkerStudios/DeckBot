@@ -35,13 +35,12 @@ client.on("interactionCreate", async (interaction) => {
   } else {
     return;
   }
-
-client.on("messageCreate", async (message) => {
-  if (message.author.bot) return;
-  if (message) {
-    await message.delete();
-  }
 });
+
+client.on("messageCreate", (message) => {
+  if (!message.author.bot) {
+    message.delete();
+  }
 });
 
 client.login(config.DISCORD_TOKEN);
